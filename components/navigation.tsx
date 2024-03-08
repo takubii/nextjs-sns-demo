@@ -3,6 +3,8 @@
 import type { Session } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { ModalType } from './modal/modalType';
+import ModalCore from './modalCore';
 
 const Navigation = ({ session }: { session: Session | null }) => {
   const pathname = usePathname();
@@ -30,12 +32,10 @@ const Navigation = ({ session }: { session: Session | null }) => {
           ) : (
             <>
               <div>
-                {/* TODO Modal
-                    SignIn */}
+                <ModalCore modalType={ModalType.SignIn}></ModalCore>
               </div>
               <div>
-                {/* TODO Modal
-                    SignUp */}
+                <ModalCore modalType={ModalType.SignUp}></ModalCore>
               </div>
             </>
           )}
