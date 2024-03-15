@@ -168,4 +168,129 @@ export default function Chats() {
 
     return mergedChats;
   };
+
+  const getMessage = async (toId: string) => {
+    let allMessage = null;
+
+    try {
+      const data = await fetchAndMergeChats(toId);
+      allMessage = data;
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (allMessage != null) {
+      setMessageText(allMessage);
+    }
+  };
+
+  const fetchRealtimeData = (currentToId: string) => {
+    try {
+      supabase
+        .channel('chats')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'Chats',
+          },
+          (payload) => {
+            // insert時の処理
+            if (payload.eventType === 'INSERT') {
+              const { created_at, id, message, toID, uid, isAlreadyRead } = payload.new;
+              const isUser = uid === userId && toID === currentToId;
+              const isToUser = uid === currentToId && toID === userId;
+
+              if (isUser || isToUser) {
+                let isMyMessage = true;
+
+                if (uid === currentToId) {
+                  isMyMessage = false;
+                }
+
+                setMessageText((messageText) => [
+                  ...messageText,
+                  { created_at, id, message, toID, uid, isAlreadyRead, isMyMessage },
+                ]);
+              }
+            }
+
+            // update時に既読マークをつける
+            if (payload.eventType === 'UPDATE') {
+              const { id, toID, uid } = payload.new;
+              const element = document.querySelector(`#id${id} .isAlreadyRead`);
+
+              if (element && uid === userId && toID === currentToId) {
+                element.textContent = '既読';
+              }
+            }
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSelectUser = async (event: any) => {
+    event.preventDefault();
+    setIsScrolled(false);
+
+    const toUserId = event.target.id;
+    setCurrentToId(toUserId);
+
+    await getMessage(toUserId);
+
+    fetchRealtimeData(toUserId);
+  };
+
+  const onSubmitNewMessage = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (inputText === '') return;
+
+    try {
+      await supabase.from('Chats').insert({ message: inputText, uid: userId, toID: currentToId });
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+
+    setInputText('');
+    mutationObserver!.observe(scrollElement.current!, { childList: true });
+  };
+
+  return (
+    <div className='mt-10 container mx-auto shadow-lg rounded-lg'>
+      <div className='flex flex-row justify-between bg-white'>
+        {/* TODO Sidebar */}
+        <div className='w-full px-5 flex flex-col justify-between'>
+          <div className='flex flex-col mt-5'>
+            {/* TODO ChatUI */}
+            <div className='py-5'>
+              <form className='w-full flex' onSubmit={onSubmitNewMessage}>
+                <input
+                  type='text'
+                  name='message'
+                  id='message'
+                  className='w-full bg-gray-300 py-5 px-3 rounded-xl'
+                  placeholder='type your message here...'
+                  value={inputText}
+                  onChange={(event) => setInputText(() => event.target.value)}
+                />
+                <button
+                  type='submit'
+                  disabled={inputText === ''}
+                  className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-20 ml-2 px-5 py-2.5 text-center disabled:opacity-25'
+                >
+                  送信
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
