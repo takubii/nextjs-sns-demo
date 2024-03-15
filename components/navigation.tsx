@@ -10,8 +10,10 @@ const Navigation = ({ session }: { session: Session | null }) => {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (session === null && pathname?.includes('/profile')) {
-    router.push('/');
+  if (session === null) {
+    if (pathname?.includes('/profile') || pathname?.includes('chats')) {
+      router.push('/');
+    }
   }
 
   return (
@@ -24,11 +26,18 @@ const Navigation = ({ session }: { session: Session | null }) => {
             </Link>
           </div>
           {session ? (
-            <div>
-              <Link className='text-gray-600 hover:text-blue-600' href='/profile'>
-                Profile
-              </Link>
-            </div>
+            <>
+              <div>
+                <Link className='text-gray-600 hover:text-blue-600' href='/profile'>
+                  Profile
+                </Link>
+              </div>
+              <div>
+                <Link className='text-gray-600 hover:text-blue-600' href='/chats'>
+                  Chats
+                </Link>
+              </div>
+            </>
           ) : (
             <>
               <div>
