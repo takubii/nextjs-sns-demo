@@ -1,5 +1,7 @@
 'use client';
 
+import ChatUI from '@/components/chats/chatUI';
+import SideBar from '@/components/chats/sideBar';
 import { Database } from '@/types/supabasetype';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useRef, useState } from 'react';
@@ -264,10 +266,26 @@ export default function Chats() {
   return (
     <div className='mt-10 container mx-auto shadow-lg rounded-lg'>
       <div className='flex flex-row justify-between bg-white'>
-        {/* TODO Sidebar */}
+        <SideBar profiles={profiles} setProfiles={setProfiles} handleClick={handleSelectUser} />
         <div className='w-full px-5 flex flex-col justify-between'>
           <div className='flex flex-col mt-5'>
-            {/* TODO ChatUI */}
+            <div id='scrollElement' className='overflow-y-scroll h-96' ref={scrollElement}>
+              {messageText.map((item, index) => (
+                <div
+                  key={index}
+                  ref={addToRefs}
+                  className={
+                    item.isMyMessage
+                      ? 'flex mb-4 justify-start flex-row-reverse isMyMessage'
+                      : 'flex justify-start mb-4'
+                  }
+                  id={'id' + item.id}
+                  data-isalreadyread={!item.isMyMessage ? item.isAlreadyRead : ''}
+                >
+                  <ChatUI item={item} />
+                </div>
+              ))}
+            </div>
             <div className='py-5'>
               <form className='w-full flex' onSubmit={onSubmitNewMessage}>
                 <input
