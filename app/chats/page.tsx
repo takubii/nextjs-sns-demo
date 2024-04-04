@@ -28,7 +28,7 @@ export default function Chats() {
 
     if (firstUnreadItem) {
       firstUnreadItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
+    } else if (items.length > 0) {
       items[items.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
@@ -45,7 +45,7 @@ export default function Chats() {
           !entry.target.classList.contains('isMyMessage')
         ) {
           entry.target.setAttribute('data-isalreadyread', 'true');
-          await updateChat(entry.target.id, true);
+          await updateChat(entry.target.id);
         }
 
         observer.unobserve(entry.target);
@@ -54,13 +54,11 @@ export default function Chats() {
   };
 
   // チャットの更新処理
-  const updateChat = async (id: string, value: boolean) => {
+  const updateChat = async (id: string) => {
     try {
+      const timeStamp = new Date().toISOString();
       const index = parseInt(id.split('id')[1]);
-      const { error } = await supabase
-        .from('Chats')
-        .update({ isAlreadyRead: value })
-        .eq('id', index);
+      const { error } = await supabase.from('Chats').update({ read_at: timeStamp }).eq('id', index);
 
       if (error) {
         console.error(error);
@@ -144,7 +142,7 @@ export default function Chats() {
         message: chats1[index].message,
         toID: chats1[index].toID,
         uid: chats1[index].uid,
-        isAlreadyRead: chats1[index].isAlreadyRead,
+        isAlreadyRead: !!chats1[index].read_at,
         isMyMessage: true,
       });
     }
@@ -158,7 +156,7 @@ export default function Chats() {
         message: chats2[index].message,
         toID: chats2[index].toID,
         uid: chats2[index].uid,
-        isAlreadyRead: chats2[index].isAlreadyRead,
+        isAlreadyRead: !!chats2[index].read_at,
         isMyMessage: false,
       });
     }
@@ -171,18 +169,18 @@ export default function Chats() {
     return mergedChats;
   };
 
-  const getMessage = async (toId: string) => {
-    let allMessage = null;
+  const getMessages = async (toId: string) => {
+    let allMessages = null;
 
     try {
       const data = await fetchAndMergeChats(toId);
-      allMessage = data;
+      allMessages = data;
     } catch (error) {
       console.error(error);
     }
 
-    if (allMessage != null) {
-      setMessageText(allMessage);
+    if (allMessages != null) {
+      setMessageText(allMessages);
     }
   };
 
@@ -200,7 +198,7 @@ export default function Chats() {
           (payload) => {
             // insert時の処理
             if (payload.eventType === 'INSERT') {
-              const { created_at, id, message, toID, uid, isAlreadyRead } = payload.new;
+              const { created_at, id, message, toID, uid, read_at } = payload.new;
               const isUser = uid === userId && toID === currentToId;
               const isToUser = uid === currentToId && toID === userId;
 
@@ -213,7 +211,7 @@ export default function Chats() {
 
                 setMessageText((messageText) => [
                   ...messageText,
-                  { created_at, id, message, toID, uid, isAlreadyRead, isMyMessage },
+                  { created_at, id, message, toID, uid, isAlreadyRead: !!read_at, isMyMessage },
                 ]);
               }
             }
@@ -242,7 +240,7 @@ export default function Chats() {
     const toUserId = event.target.id;
     setCurrentToId(toUserId);
 
-    await getMessage(toUserId);
+    await getMessages(toUserId);
 
     fetchRealtimeData(toUserId);
   };
@@ -265,6 +263,7 @@ export default function Chats() {
 
   return (
     <div className='mt-10 container mx-auto shadow-lg rounded-lg'>
+      {/* TODO: NotificationList */}
       <div className='flex flex-row justify-between bg-white'>
         <SideBar profiles={profiles} setProfiles={setProfiles} handleClick={handleSelectUser} />
         <div className='w-full px-5 flex flex-col justify-between'>
