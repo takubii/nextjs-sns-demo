@@ -2,6 +2,7 @@
 
 import ChatUI from '@/components/chats/chatUI';
 import SideBar from '@/components/chats/sideBar';
+import NotificationList from '@/components/notify/notificationList';
 import { Database } from '@/types/supabasetype';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useRef, useState } from 'react';
@@ -263,7 +264,7 @@ export default function Chats() {
 
   return (
     <div className='mt-10 container mx-auto shadow-lg rounded-lg'>
-      {/* TODO: NotificationList */}
+      <NotificationList />
       <div className='flex flex-row justify-between bg-white'>
         <SideBar profiles={profiles} setProfiles={setProfiles} handleClick={handleSelectUser} />
         <div className='w-full px-5 flex flex-col justify-between'>
