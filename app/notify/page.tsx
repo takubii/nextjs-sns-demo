@@ -17,7 +17,7 @@ export default function Notify() {
   }, []);
 
   const getNotification = async () => {
-    const { data: notificatons, error } = await supabase
+    const { data: notifications, error } = await supabase
       .from('notifications')
       .select()
       .eq('id', notificationId);
